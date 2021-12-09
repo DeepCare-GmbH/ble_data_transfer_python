@@ -1,0 +1,76 @@
+syntax = "proto3";
+package deepcare;
+
+// Message to trigger a data transfer. Limited to 185 Bytes for iOS.
+message StartTransferRequest {
+    string filename = 1;
+    bytes hash = 2; // First 8 bytes of a MD5 hash.
+    int32 chunks = 3;
+
+    enum Target {
+      DOCKER_IMAGE = 0;
+      USER_BACKGROUND_IMAGE = 1;
+      DATA = 2;
+      BASH_SCRIPT = 3;
+      ANSIBLE_SCRIPT = 4;
+    }
+    Target target = 4;
+
+    enum Direction {
+        MAIN = 0; // Cellphone
+        SECOND = 1; // PI
+    }
+    Direction direction = 5;
+  }
+  
+
+// Response message to a trigger. Limited to 185 Bytes for iOS.
+message StartTransferResponse {
+    string filename = 1;
+    bytes hash = 2; // First 8 bytes of a MD5 hash.
+    int32 chunks = 3;
+
+    enum Target {
+      DOCKER_IMAGE = 0;
+      USER_BACKGROUND_IMAGE = 1;
+      DATA = 2;
+      BASH_SCRIPT = 3;
+      ANSIBLE_SCRIPT = 4;
+    }
+    Target target = 4;
+
+    enum Status {
+        UNKNOWN = 0;
+        READY = 1;
+        CONTINUE_OLD = 2; // Old transfer pending, has to be continued.
+        FILE_NOT_FOUND = 3;
+        HDD_FULL = 4;
+        AUTH_FAILED = 5;
+        ERROR = 6;
+    }
+
+    Status status = 5;
+  }
+
+// Data transfer message, as long as MTU allows.
+message Data {
+    repeated bytes hash = 1; // First 2 bytes of a MD5 hash.
+    int32 chunk_num = 2;
+    repeated bytes data = 3; // Actual data, size MTU - 6 Bytes 
+}
+
+
+// Continue message. Limited to 185 Bytes for iOS.
+message Continue {
+    string filename = 1;
+    repeated bytes hash = 2; // First 8 bytes of a MD5 hash.
+    int32 current_chunk = 3;
+
+    enum Status {
+        UNKNOWN = 0;
+        TRANSFER_PENDING = 1;
+        NO_TRANSFER_PENDING = 2;
+    } 
+
+    Status status = 4;
+} 

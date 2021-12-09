@@ -1,0 +1,16 @@
+syntax = "proto3";
+package deepcare;
+
+// Base transfer message
+message TransferData {
+  
+  // Header (14 bytes)
+  int32 address = 1;
+  bytes hash = 2; // First 2 bytes of a MD5 hash.
+  int32 current_chunk = 3;
+  int32 overall_chunks = 4;
+
+  // Data (Filled to MTU size)
+  bytes data = 5;
+  }
+  
