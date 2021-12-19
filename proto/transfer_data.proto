@@ -1,5 +1,5 @@
 syntax = "proto3";
-package deepcare;
+package deepcare.transfer_data;
 
 // Base transfer message
 message TransferData {

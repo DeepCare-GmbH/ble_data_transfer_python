@@ -1,5 +1,5 @@
 syntax = "proto3";
-package deepcare;
+package deepcare.messages;
 
 // Message to trigger a data transfer. Limited to 185 Bytes for iOS.
 message StartTransferRequest {

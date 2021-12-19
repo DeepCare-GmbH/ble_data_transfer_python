@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# empty folder created by betterproto (package root name)
+/deepcare/
