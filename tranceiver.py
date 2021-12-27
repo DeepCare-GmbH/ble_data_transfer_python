@@ -13,6 +13,27 @@ class Receiver():
 
     def __init__(self, mtu=185) -> None:
         self._mtu = mtu
+        self._no_of_chunks = 0
+        self._data: List[bytes] = []
+
+    def new_chunk(self, chunk: TransferData) -> int:
+
+        if chunk.current_chunk == 0:
+            self._no_of_chunks = chunk.overall_chunks - 1
+            self._data = []
+
+        hash = hashlib.md5(bytes(chunk.data)).digest()[0:2]
+        if hash != bytes(chunk.hash):
+            print('wrong hash')
+            return -1
+
+        self._data.append(bytes(chunk.data))
+
+        return self._no_of_chunks - chunk.current_chunk
+
+    @property
+    def get_as_string(self) -> str:
+        return str(self._data)
 
     def receive_string(self, data: List[TransferData]) -> str:
         result = ''
@@ -99,11 +120,17 @@ if __name__ == '__main__':
 
     receiver = Receiver()
 
-    r1000 = receiver.receive_string(data)
+    # for item in data:
+    #     remaining = receiver.new_chunk(item)
+    #     log.info(remaining)
 
-    log.info(f'received data contains {len(s1000)} chars')
+    # if remaining == 0:
+    #     r1000 = receiver.get_as_string
 
-    if (r1000 == s1000):
-        log.info('received == send')
-    else:
-        log.error('received != send')
+    #     if (r1000 == s1000):
+    #         log.info('received == send')
+    #     else:
+    #         log.error('received != send')
+
+    # else:
+    #     log.error('receive error')
