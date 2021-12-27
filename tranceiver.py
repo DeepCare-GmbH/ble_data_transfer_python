@@ -3,7 +3,7 @@ import logging
 from typing import List
 import coloredlogs
 import hashlib
-from gen.deepcare.transfer_data import TransferData
+from ble_data_transfer_python.gen.deepcare.transfer_data import TransferData
 import itertools
 
 PAYLOAD_HEADER_SIZE = 22
@@ -17,9 +17,9 @@ class Receiver():
     def receive_string(self, data: List[TransferData]) -> str:
         result = ''
         for item in data:
-            hash = hashlib.md5(item.data).digest()[0:2]
-            assert (hash == item.hash), 'hash error'
-            result = result + str(item.data, 'utf-8')
+            hash = hashlib.md5(bytes(item.data)).digest()[0:2]
+            assert (hash == bytes(item.hash)), 'hash error'
+            result = result + str(bytes(item.data), 'utf-8')
 
         return result
 
