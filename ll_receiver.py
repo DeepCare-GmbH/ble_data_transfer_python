@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Class providing reception of chunked data.
+# Class providing low level reception of chunked data.
 # Michael Katzenberger
 # 29.12.2021
 
@@ -12,13 +12,13 @@ from typing import List
 from ble_data_transfer_python.gen.deepcare.transfer_data import TransferData
 
 
-class ReceiverError(Enum):
+class LLReceiverError(Enum):
     NONE = 0,
     WRONG_HASH = 1,
     WRONG_SEQUENCE = 2,
 
 
-class Receiver():
+class LLReceiver():
     """Class providing reception of chunked data.
     """
 
@@ -34,7 +34,7 @@ class Receiver():
         self._timestamp = 0.0
         # flag to indicate that new unread data are available
         self.new_data = False
-        self.error = ReceiverError.NONE
+        self.error = LLReceiverError.NONE
 
     def _reset(self, num_of_chunks: int) -> None:
         """Reset the transfer.
@@ -49,7 +49,7 @@ class Receiver():
         self._data = bytes()
         self._timestamp = time.time()
         self.new_data = False
-        self.error = ReceiverError.NONE
+        self.error = LLReceiverError.NONE
 
     def new_chunk(self, chunk: TransferData) -> int:
         """Consume received chunk.
@@ -69,13 +69,13 @@ class Receiver():
 
         # check for correct chunk sequence
         elif (self._remaining_chunks + chunk.current_chunk) != chunk.overall_chunks:
-            self.error = ReceiverError.WRONG_SEQUENCE
+            self.error = LLReceiverError.WRONG_SEQUENCE
             return -1
 
         # calc and verify hash
         chunk_hash = hashlib.md5(bytes(chunk.data)).digest()[0:2]
         if chunk_hash != bytes(chunk.hash):
-            self.error = ReceiverError.WRONG_HASH
+            self.error = LLReceiverError.WRONG_HASH
             return -1
 
         # join received byte list
