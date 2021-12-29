@@ -2,7 +2,6 @@
 # sources: proto/messages.proto
 # plugin: python-betterproto
 from dataclasses import dataclass
-from typing import List
 
 import betterproto
 
@@ -13,6 +12,7 @@ class StartTransferRequestTarget(betterproto.Enum):
     DATA = 2
     BASH_SCRIPT = 3
     ANSIBLE_SCRIPT = 4
+    PLAIN_FILE = 5
 
 
 class StartTransferRequestDirection(betterproto.Enum):
@@ -30,18 +30,12 @@ class StartTransferResponseTarget(betterproto.Enum):
 
 class StartTransferResponseStatus(betterproto.Enum):
     UNKNOWN = 0
-    READY = 1
-    CONTINUE_OLD = 2
+    TRANSFER = 1
+    FINISHED = 2
     FILE_NOT_FOUND = 3
     HDD_FULL = 4
     AUTH_FAILED = 5
     ERROR = 6
-
-
-class ContinueStatus(betterproto.Enum):
-    UNKNOWN = 0
-    TRANSFER_PENDING = 1
-    NO_TRANSFER_PENDING = 2
 
 
 @dataclass
@@ -62,24 +56,6 @@ class StartTransferResponse(betterproto.Message):
     filename: str = betterproto.string_field(1)
     hash: bytes = betterproto.bytes_field(2)
     chunks: int = betterproto.int32_field(3)
-    target: "StartTransferResponseTarget" = betterproto.enum_field(4)
-    status: "StartTransferResponseStatus" = betterproto.enum_field(5)
-
-
-@dataclass
-class Data(betterproto.Message):
-    """Data transfer message, as long as MTU allows."""
-
-    hash: List[bytes] = betterproto.bytes_field(1)
-    chunk_num: int = betterproto.int32_field(2)
-    data: List[bytes] = betterproto.bytes_field(3)
-
-
-@dataclass
-class Continue(betterproto.Message):
-    """Continue message. Limited to 185 Bytes for iOS."""
-
-    filename: str = betterproto.string_field(1)
-    hash: List[bytes] = betterproto.bytes_field(2)
-    current_chunk: int = betterproto.int32_field(3)
-    status: "ContinueStatus" = betterproto.enum_field(4)
+    next_chunk: int = betterproto.int32_field(4)
+    target: "StartTransferResponseTarget" = betterproto.enum_field(5)
+    status: "StartTransferResponseStatus" = betterproto.enum_field(6)

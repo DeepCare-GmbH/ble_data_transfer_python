@@ -5,31 +5,64 @@ import coloredlogs
 import hashlib
 from ble_data_transfer_python.gen.deepcare.transfer_data import TransferData
 import itertools
+import time
 
 PAYLOAD_HEADER_SIZE = 22
 
 
 class Receiver():
 
-    def __init__(self, mtu=185) -> None:
-        self._mtu = mtu
-        self._no_of_chunks = 0
-        self._data: List[bytes] = []
+    def __init__(self) -> None:
+        
+        # number of chunks expected
+        self._remaining_chunks = 0
+        # received data
+        self._data = bytes()
+        # time stamp the data transfer was initiated
+        self._timestamp: float = 0.0
+        # flag to indicate that new unread data are available
+        self.new_data = False
+        self.error = 0
 
     def new_chunk(self, chunk: TransferData) -> int:
 
+        # very first chunk will reset the file reception
         if chunk.current_chunk == 0:
-            self._no_of_chunks = chunk.overall_chunks - 1
-            self._data = []
+            self.new_data = False
+            self._remaining_chunks = chunk.overall_chunks
+            self._data = bytes()
+            self._timestamp = time.time()
 
-        hash = hashlib.md5(bytes(chunk.data)).digest()[0:2]
-        if hash != bytes(chunk.hash):
+        # calc and verify hash
+        chunk_hash = hashlib.md5(bytes(chunk.data)).digest()[0:2]
+        if chunk_hash != bytes(chunk.hash):
+            # TODO: handle hash errors - abort transfer ?
+            self.error = -1
             print('wrong hash')
             return -1
 
-        self._data.append(bytes(chunk.data))
+        # join received byte list
+        self._data.join([bytes(chunk.data)])
+        self._remaining_chunks -= 1
 
-        return self._no_of_chunks - chunk.current_chunk
+        # if last chunk than set new data flag
+        if self._remaining_chunks == 0:
+            self.new_data = True
+
+        return self._remaining_chunks
+
+    @property
+    def transfer_duration(self) -> float:
+        return time.time() - self._timestamp
+
+    @property
+    def remaining(self)->int:
+        return self._remaining_chunks
+
+    @property
+    def data(self)->bytes:
+        self.new_data = False
+        return self._data
 
     @property
     def get_as_string(self) -> str:
