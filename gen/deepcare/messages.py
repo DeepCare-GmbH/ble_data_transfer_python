@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import betterproto
 
 
-class StartTransferRequestTarget(betterproto.Enum):
+class Target(betterproto.Enum):
     DOCKER_IMAGE = 0
     USER_BACKGROUND_IMAGE = 1
     DATA = 2
@@ -18,14 +18,6 @@ class StartTransferRequestTarget(betterproto.Enum):
 class StartTransferRequestDirection(betterproto.Enum):
     MAIN = 0
     SECOND = 1
-
-
-class StartTransferResponseTarget(betterproto.Enum):
-    DOCKER_IMAGE = 0
-    USER_BACKGROUND_IMAGE = 1
-    DATA = 2
-    BASH_SCRIPT = 3
-    ANSIBLE_SCRIPT = 4
 
 
 class StartTransferResponseStatus(betterproto.Enum):
@@ -45,7 +37,7 @@ class StartTransferRequest(betterproto.Message):
     filename: str = betterproto.string_field(1)
     hash: bytes = betterproto.bytes_field(2)
     chunks: int = betterproto.int32_field(3)
-    target: "StartTransferRequestTarget" = betterproto.enum_field(4)
+    target: "Target" = betterproto.enum_field(4)
     direction: "StartTransferRequestDirection" = betterproto.enum_field(5)
 
 
@@ -57,5 +49,5 @@ class StartTransferResponse(betterproto.Message):
     hash: bytes = betterproto.bytes_field(2)
     chunks: int = betterproto.int32_field(3)
     next_chunk: int = betterproto.int32_field(4)
-    target: "StartTransferResponseTarget" = betterproto.enum_field(5)
+    target: "Target" = betterproto.enum_field(5)
     status: "StartTransferResponseStatus" = betterproto.enum_field(6)
