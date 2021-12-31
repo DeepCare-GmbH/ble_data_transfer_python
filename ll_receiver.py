@@ -7,7 +7,7 @@
 import hashlib
 import time
 from enum import Enum
-from typing import List
+from typing import Callable, List
 
 from ble_data_transfer_python.gen.deepcare.transfer_data import TransferData
 
@@ -22,8 +22,11 @@ class LLReceiver():
     """Class providing reception of chunked data.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, cb_new_data: Callable[[List[bytes]], None] = None) -> None:
         """Constructor.
+
+        Args:
+            cb_new_data (Callable[[List[bytes]], None], optional): callback executed if new data are available (complete transfer). Defaults to None.
         """
 
         # number of chunks expected
@@ -35,6 +38,8 @@ class LLReceiver():
         # flag to indicate that new unread data are available
         self.new_data = False
         self.error = LLReceiverError.NONE
+        # take over callback
+        self._cb_new_data = cb_new_data
 
     def _reset(self, num_of_chunks: int) -> None:
         """Reset the transfer.
@@ -88,6 +93,9 @@ class LLReceiver():
             self.new_data = True
             # after transfer time stamp contains the data transfer duration
             self._timestamp = time.time() - self._timestamp
+            # if callback is set execute it
+            if self._cb_new_data:
+                self._cb_new_data(self._data)
 
         return self._remaining_chunks
 
@@ -126,3 +134,26 @@ class LLReceiver():
 
         self.new_data = False
         return self._data
+
+    def __str__(self) -> str:
+
+        if self.error != LLReceiverError.NONE:
+            return f'last error: {self.error}'
+
+        if self.new_data:
+            num_bytes = len(self._data)
+            speed = num_bytes/self.transfer_duration
+            return f'finished: {num_bytes} bytes received in {self.transfer_duration:0.2f} s = {speed:0.1f} bytes/s'
+
+        if self._remaining_chunks > 0:
+            return f'transfer in progress ({self._remaining_chunks})'
+
+        return 'idle'
+
+    @property
+    def cb_new_data(self) -> Callable[[List[bytes]], None]:
+        return self._cb_new_data
+
+    @cb_new_data.setter
+    def cb_new_data(self, cb: Callable[[List[bytes]], None]):
+        self._cb_new_data = cb
