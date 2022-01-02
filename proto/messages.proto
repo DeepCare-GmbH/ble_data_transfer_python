@@ -2,50 +2,52 @@ syntax = "proto3";
 package deepcare.messages;
 
 enum Target {
-  DOCKER_IMAGE = 0;
-  USER_BACKGROUND_IMAGE = 1;
-  DATA = 2;
-  BASH_SCRIPT = 3;
-  ANSIBLE_SCRIPT = 4;
-  PLAIN_FILE = 5;
+  UNKNOWN = 0;
+  DOCKER_IMAGE = 1;
+  USER_BACKGROUND_IMAGE = 2;
+  DATA = 3;
+  BASH_SCRIPT = 4;
+  ANSIBLE_SCRIPT = 5;
+  PLAIN_FILE = 6;
 }
 
 
 // Message to trigger a data transfer. Limited to 185 Bytes for iOS.
 message StartTransferRequest {
-    string filename = 1;
-    bytes hash = 2; // complete MD5 hash (32 bytes)
-    int32 chunks = 3; // number of 100k chunks
 
-    Target target = 4;
-
-    enum Direction {
-        MAIN = 0; // Cellphone
-        SECOND = 1; // PI
-    }
-    Direction direction = 5;
+  enum Direction {
+      MAIN = 0;             // Cellphone
+      SECOND = 1;           // PI
   }
+
+  string filename = 1;      // name of file to transfer
+  bytes hash = 2;           // complete MD5 hash (32 bytes) of file to transfer
+  int32 chunks = 3;         // number of chunks
+  Target target = 4;        // file type
+  Direction direction = 5;  // transfer direction
+}
   
 
 // Response message to a trigger. Limited to 185 Bytes for iOS.
 message StartTransferResponse {
-    string filename = 1;
-    bytes hash = 2; // First 8 bytes of a MD5 hash.
-    int32 chunks = 3;
-    int32 next_chunk = 4; // next expected chunk, zero if new request
 
-    Target target = 5;
-
-    enum Status {
-        UNKNOWN = 0;
-        TRANSFER = 1; // ready for transfer
-        FINISHED = 2; // file already transferred
-        FILE_NOT_FOUND = 3;
-        HDD_FULL = 4;
-        AUTH_FAILED = 5;
-        ERROR = 6;
-    }
-
-    Status status = 6;
+  enum Status {
+      UNKNOWN = 0;
+      TRANSFER = 1;         // ready for transfer
+      FINISHED = 2;         // file already transferred
+      FILE_NOT_FOUND = 3;
+      HDD_FULL = 4;
+      AUTH_FAILED = 5;
+      ERROR = 6;
   }
+
+  string filename = 1;      // name of file in transfer
+  bytes hash = 2;           // complete MD5 hash (32 bytes) of last chunk
+  int32 chunks = 3;         // number of chunks
+  int32 next_chunk = 4;     // next expected chunk, zero if new request
+  Target target = 5;        // file type
+  Status status = 6;        // current transfer status
+  float duration = 7;       // duration of current transfer in [s]
+  uint32 size = 8;          // currently transferred bytes
+}
   

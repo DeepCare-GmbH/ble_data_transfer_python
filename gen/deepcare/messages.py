@@ -7,12 +7,13 @@ import betterproto
 
 
 class Target(betterproto.Enum):
-    DOCKER_IMAGE = 0
-    USER_BACKGROUND_IMAGE = 1
-    DATA = 2
-    BASH_SCRIPT = 3
-    ANSIBLE_SCRIPT = 4
-    PLAIN_FILE = 5
+    UNKNOWN = 0
+    DOCKER_IMAGE = 1
+    USER_BACKGROUND_IMAGE = 2
+    DATA = 3
+    BASH_SCRIPT = 4
+    ANSIBLE_SCRIPT = 5
+    PLAIN_FILE = 6
 
 
 class StartTransferRequestDirection(betterproto.Enum):
@@ -51,3 +52,5 @@ class StartTransferResponse(betterproto.Message):
     next_chunk: int = betterproto.int32_field(4)
     target: "Target" = betterproto.enum_field(5)
     status: "StartTransferResponseStatus" = betterproto.enum_field(6)
+    duration: float = betterproto.float_field(7)
+    size: int = betterproto.uint32_field(8)
