@@ -7,14 +7,12 @@
 import hashlib
 import logging
 import time
-from enum import Enum
 from typing import List
 
 import coloredlogs
 
 from ble_data_transfer_python.gen.deepcare.messages import (
-    StartTransferRequest, StartTransferRequestDirection, StartTransferResponse,
-    StartTransferResponseStatus, Target)
+    StartTransferRequest, StartTransferResponse, StartTransferResponseStatus)
 from ble_data_transfer_python.ll_receiver import LLReceiver
 
 
@@ -34,12 +32,8 @@ class HLTransceiver():
         # current response
         self._response = StartTransferResponse()
 
-        # received LL chunks
-        self._chunks: List[bytes] = []
         # time stamp the data transfer was initiated, contains duration after transfer
         self._timestamp = 0.0
-
-        self._hash = hashlib.md5()
 
         # take over low lever receiver
         self._ll_receiver = ll_receiver
@@ -62,8 +56,6 @@ class HLTransceiver():
         # ready for transfer
         self._response.status = StartTransferResponseStatus.TRANSFER
 
-        # reset chunk list
-        self._chunks = []
         # take timestamp
         self._timestamp = time.time()
 
@@ -81,25 +73,24 @@ class HLTransceiver():
         if (self._request.hash != request.hash) or (self._response.status != StartTransferResponseStatus.TRANSFER):
             self._reset(request)
 
-        # set next chunk
-        self._response.next_chunk = len(self._chunks)
-
         self._logger.info('start transfer request received')
         self._logger.debug(request)
 
     def get_response(self) -> StartTransferResponse:
 
         self._logger.info('start transfer response requested')
-        self._logger.debug(self._response.next_chunk)
+        self._logger.debug(self._response)
         return self._response
 
     def add_chunk(self, chunk: List[bytes]) -> None:
 
-        # update hash
-        self._hash.update(chunk)
+        # return hash
+        self._response.hash = hashlib.md5(chunk).digest()
 
-        # save chunk to disk and store filename in list
-        self._chunks.append(self._save_chunk(chunk))
+        # save chunk to disk
+        file_name = f'chunk{self._response.next_chunk}.bin'
+        with open(file_name, 'wb') as f:
+            f.write(chunk)
 
         # request next chunk
         self._response.next_chunk += 1
@@ -111,23 +102,59 @@ class HLTransceiver():
         if self._response.next_chunk == self._response.chunks:
             self._transfer_finished()
 
-    def _save_chunk(self, chunk: List[bytes]) -> str:
-        file_name = f'chunk{len(self._chunks)}.bin'
-        with open(file_name, 'wb') as f:
-            f.write(chunk)
-        return file_name
+        # update transfer time
+        self._response.duration = self.transfer_duration
+        self._response.size += len(chunk)
 
     def _transfer_finished(self):
+
+        # stop time
         self._timestamp = time.time() - self._timestamp
 
-        if self._hash.digest() == self._request.hash:
-            with open(self._request.filename, 'wb') as fout:
-                for item in self._chunks:
-                    with open(item, 'rb') as fin:
-                        fout.write(fin.read())
+        # cat the the chunks into the final file and calculate the hash
+        hash = hashlib.md5()
+        with open(self._request.filename, 'wb') as binary_out:
+            for i in range(self._response.chunks):
+                file_name = f'chunk{i}.bin'
+                with open(file_name, 'rb') as fin:
+                    chunk = fin.read()
+                hash.update(chunk)
+                binary_out.write(chunk)
+
+        if hash.digest() == self._request.hash:
             self._response.status = StartTransferResponseStatus.FINISHED
             self._logger.info(
-                f'{self._request.filename} transfered in {self._timestamp} s')
+                f'{self._request.filename} transferred in {self._timestamp} s')
+
         else:
             self._response.status = StartTransferResponseStatus.ERROR
             self._logger.error('transfer finished - invalid hash')
+
+    @property
+    def transfer_duration(self) -> float:
+        """Duration of last transfer.
+
+        Returns:
+            float: duration of file transfer in [s]
+        """
+
+        # if transfer in progress return time since start
+        if self._response.status == StartTransferResponseStatus.TRANSFER:
+            return time.time() - self._timestamp
+
+        # return the duration of the last transfer
+        if self._response.status == StartTransferResponseStatus.FINISHED:
+            return self._timestamp
+
+        # in all other cases return zero
+        return 0.0
+
+    @property
+    def transferred_bytes(self) -> int:
+        """Number of transferred bytes.
+
+        Returns:
+            int: number of transferred bytes so far
+        """
+
+        return self._response.size
