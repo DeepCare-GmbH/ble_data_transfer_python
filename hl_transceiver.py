@@ -82,6 +82,11 @@ class HLTransceiver():
         self._logger.debug(request)
 
     def get_response(self) -> StartTransferResponse:
+        """Get the transfer response.
+
+        Returns:
+            StartTransferResponse: current transfer response
+        """
 
         self._logger.info('start transfer response requested')
         self._logger.debug(self._response)
@@ -110,7 +115,7 @@ class HLTransceiver():
         self._response.next_chunk += 1
 
         self._logger.info(
-            f'new chunk ({self._response.next_chunk}/{self._response.chunks}) received ({self._ll_receiver})')
+            'new chunk (%d/%d) received (%s)', self._response.next_chunk, self._response.chunks, self._ll_receiver)
 
         # check if all chunks were received
         if self._response.next_chunk == self._response.chunks:
@@ -126,20 +131,20 @@ class HLTransceiver():
         self._timestamp = time.time() - self._timestamp
 
         # cat the the chunks into the final file and calculate the hash
-        hash = hashlib.md5()
+        file_hash = hashlib.md5()
         file_name = self._download_path.joinpath(self._request.filename)
         with open(file_name, 'wb') as binary_out:
             for i in range(self._response.chunks):
                 chunk_name = self._download_path.joinpath(f'chunk{i}.bin')
                 with open(chunk_name, 'rb') as fin:
                     chunk = fin.read()
-                hash.update(chunk)
+                file_hash.update(chunk)
                 binary_out.write(chunk)
 
-        if hash.digest() == self._request.hash:
+        if file_hash.digest() == self._request.hash:
             self._response.status = StartTransferResponseStatus.FINISHED
             self._logger.info(
-                f'{self._request.filename} transferred in {self._timestamp} s')
+                '%s transferred in %0.1f s', self._request.filename, self._timestamp)
 
         else:
             self._response.status = StartTransferResponseStatus.ERROR
