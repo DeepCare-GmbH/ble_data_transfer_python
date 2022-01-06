@@ -6,6 +6,7 @@
 
 import hashlib
 import logging
+import pathlib
 import time
 from typing import List
 
@@ -20,7 +21,7 @@ class HLTransceiver():
     """Class providing reception of data.
     """
 
-    def __init__(self, ll_receiver: LLReceiver) -> None:
+    def __init__(self, ll_receiver: LLReceiver, download_path: str) -> None:
         """Constructor.
         """
 
@@ -39,6 +40,10 @@ class HLTransceiver():
         self._ll_receiver = ll_receiver
         # set callback if ll chunk was received
         self._ll_receiver.cb_new_data = self.add_chunk
+
+        # ensure download path folder exists
+        self._download_path = pathlib.Path(download_path).expanduser()
+        self._download_path.mkdir(parents=True, exist_ok=True)
 
         self._logger.info('high level transceiver ready')
 
@@ -83,14 +88,23 @@ class HLTransceiver():
         return self._response
 
     def add_chunk(self, chunk: List[bytes]) -> None:
+        """Set as as callback in low level receiver.
+
+        Executed each time a complete chunk was received from the app.
+        All chunks are stored on disk in sequence.
+
+        Args:
+            chunk (List[bytes]): received chunk
+        """
 
         # return hash
         self._response.hash = hashlib.md5(chunk).digest()
 
         # save chunk to disk
-        file_name = f'chunk{self._response.next_chunk}.bin'
-        with open(file_name, 'wb') as f:
-            f.write(chunk)
+        file_name = self._download_path.joinpath(
+            f'chunk{self._response.next_chunk}.bin')
+        with open(file_name, 'wb') as chunk_file:
+            chunk_file.write(chunk)
 
         # request next chunk
         self._response.next_chunk += 1
@@ -113,10 +127,11 @@ class HLTransceiver():
 
         # cat the the chunks into the final file and calculate the hash
         hash = hashlib.md5()
-        with open(self._request.filename, 'wb') as binary_out:
+        file_name = self._download_path.joinpath(self._request.filename)
+        with open(file_name, 'wb') as binary_out:
             for i in range(self._response.chunks):
-                file_name = f'chunk{i}.bin'
-                with open(file_name, 'rb') as fin:
+                chunk_name = self._download_path.joinpath(f'chunk{i}.bin')
+                with open(chunk_name, 'rb') as fin:
                     chunk = fin.read()
                 hash.update(chunk)
                 binary_out.write(chunk)
