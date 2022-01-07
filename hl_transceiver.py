@@ -21,6 +21,11 @@ class HLTransceiver():
     """Class providing reception of data.
     """
 
+    # file name to use for storing the download request
+    DOWNLOAD_REQUEST_FILE = 'request.json'
+    # base file name of the chunk files to use
+    DOWNLOAD_CHUNK_BASE_NAME = 'chunk'
+
     def __init__(self, ll_receiver: LLReceiver, download_path: str) -> None:
         """Constructor.
         """
@@ -45,7 +50,53 @@ class HLTransceiver():
         self._download_path = pathlib.Path(download_path).expanduser()
         self._download_path.mkdir(parents=True, exist_ok=True)
 
+        # check if a download was in progress and can be resumed
+        self._resume_download()
+
         self._logger.info('high level transceiver ready')
+
+    def _resume_download(self) -> None:
+
+        # search for previous request
+        if self._download_path.joinpath(self.DOWNLOAD_REQUEST_FILE).is_file():
+            # file found - read it
+            with open(
+                    file=self._download_path.joinpath(
+                        self.DOWNLOAD_REQUEST_FILE),
+                    mode='r',
+                    encoding='utf-8') as request_file:
+                self._request.from_json(request_file.read())
+
+            # call reset to setup response accordingly
+            self._reset(self._request)
+
+            # use number of already received chunks as next chunk number
+            self._response.next_chunk = len(
+                list(self._download_path.glob(f'{self.DOWNLOAD_CHUNK_BASE_NAME}*.bin')))
+
+            # use creation date of request file as start time
+            self._timestamp = self._download_path.joinpath(
+                self.DOWNLOAD_REQUEST_FILE).stat().st_atime
+
+            # use size of first chunk file (file name index 0) to calculate whole amount of already received bytes
+            if self._response.next_chunk > 0:
+                chunk_size = self._download_path.joinpath(
+                    f'{self.DOWNLOAD_CHUNK_BASE_NAME}0.bin').stat().st_size
+                self._response.size = chunk_size * self._response.next_chunk
+
+            self._logger.info(
+                'found running update: next chunk=%d. size=%d, duration=%f',
+                self._response.next_chunk, self._response.size, self.transfer_duration)
+
+        else:
+            # no previous download in progress - delete possible artifacts
+            self._delete_chunks()
+
+    def _delete_chunks(self) -> None:
+
+        # erase all chunks files
+        for item in self._download_path.glob(f'{self.DOWNLOAD_CHUNK_BASE_NAME}*.bin'):
+            item.unlink()
 
     def _reset(self, request: StartTransferRequest):
 
@@ -76,7 +127,16 @@ class HLTransceiver():
         # if hash is different or no previous transfer was active
         # than a new transfer is requested
         if (self._request.hash != request.hash) or (self._response.status != StartTransferResponseStatus.TRANSFER):
+            # reset for handling a new request
             self._reset(request)
+            # save request to disk
+            with open(
+                    file=self._download_path.joinpath(
+                        self.DOWNLOAD_REQUEST_FILE),
+                    mode='w',
+                    encoding='utf-8') as request_file:
+                request_file.write(self._request.to_json())
+            self._delete_chunks()
 
         self._logger.info('start transfer request received')
         self._logger.debug(request)
@@ -135,7 +195,8 @@ class HLTransceiver():
         file_name = self._download_path.joinpath(self._request.filename)
         with open(file_name, 'wb') as binary_out:
             for i in range(self._response.chunks):
-                chunk_name = self._download_path.joinpath(f'chunk{i}.bin')
+                chunk_name = self._download_path.joinpath(
+                    f'{self.DOWNLOAD_CHUNK_BASE_NAME}{i}.bin')
                 with open(chunk_name, 'rb') as fin:
                     chunk = fin.read()
                 file_hash.update(chunk)
@@ -149,6 +210,9 @@ class HLTransceiver():
         else:
             self._response.status = StartTransferResponseStatus.ERROR
             self._logger.error('transfer finished - invalid hash')
+
+        # erase request file (which is the indicator of an running download )
+        self._download_path.joinpath((self.DOWNLOAD_REQUEST_FILE)).unlink()
 
     @property
     def transfer_duration(self) -> float:
