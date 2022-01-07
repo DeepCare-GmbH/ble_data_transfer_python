@@ -13,6 +13,8 @@ from ble_data_transfer_python.gen.deepcare.transfer_data import TransferData
 
 
 class LLReceiverError(Enum):
+    """Low level error definitions
+    """
     NONE = 0,
     WRONG_HASH = 1,
     WRONG_SEQUENCE = 2,
@@ -26,7 +28,8 @@ class LLReceiver():
         """Constructor.
 
         Args:
-            cb_new_data (Callable[[List[bytes]], None], optional): callback executed if new data are available (complete transfer). Defaults to None.
+            cb_new_data (Callable[[List[bytes]], None], optional):
+            callback executed if new data are available (complete transfer). Defaults to None.
         """
 
         # number of chunks expected
@@ -60,7 +63,7 @@ class LLReceiver():
         """Consume received chunk.
 
         Args:
-            chunk (TransferData): received chunk (protbuf)
+            chunk (TransferData): received chunk (protobuf)
 
         Returns:
             int: number of remaining chunks or
@@ -152,8 +155,14 @@ class LLReceiver():
 
     @property
     def cb_new_data(self) -> Callable[[List[bytes]], None]:
+        """Callback executed for new received data (chunks).
+
+        Returns:
+            Callable[[List[bytes]], None]: user callback to consume the received data
+        """
+
         return self._cb_new_data
 
     @cb_new_data.setter
-    def cb_new_data(self, cb: Callable[[List[bytes]], None]):
-        self._cb_new_data = cb
+    def cb_new_data(self, fcn: Callable[[List[bytes]], None]):
+        self._cb_new_data = fcn
