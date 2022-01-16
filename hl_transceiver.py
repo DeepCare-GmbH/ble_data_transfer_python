@@ -8,7 +8,7 @@ import hashlib
 import logging
 import pathlib
 import time
-from typing import List
+from typing import Callable, List
 
 import coloredlogs
 
@@ -26,7 +26,7 @@ class HLTransceiver():
     # base file name of the chunk files to use
     DOWNLOAD_CHUNK_BASE_NAME = 'chunk'
 
-    def __init__(self, ll_receiver: LLReceiver, download_path: str) -> None:
+    def __init__(self, ll_receiver: LLReceiver, download_path: str, cb_transfer_finished: Callable[[bool], None]) -> None:
         """Constructor.
         """
 
@@ -52,6 +52,9 @@ class HLTransceiver():
 
         # check if a download was in progress and can be resumed
         self._resume_download()
+
+        # callback executed if transfer has been finished
+        self._cb_transfer_finished: cb_transfer_finished
 
         self._logger.info('high level transceiver ready')
 
@@ -213,6 +216,11 @@ class HLTransceiver():
 
         # erase request file (which is the indicator of an running download )
         self._download_path.joinpath((self.DOWNLOAD_REQUEST_FILE)).unlink()
+
+        # call user callback with tranfer result
+        if self._cb_transfer_finished:
+            self._cb_transfer_finished(
+                self._response.status == StartTransferResponseStatus.FINISHED)
 
     @property
     def transfer_duration(self) -> float:
