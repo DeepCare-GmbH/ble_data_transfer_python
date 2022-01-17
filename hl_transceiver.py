@@ -54,7 +54,7 @@ class HLTransceiver():
         self._resume_download()
 
         # callback executed if transfer has been finished
-        self._cb_transfer_finished: cb_transfer_finished
+        self._cb_transfer_finished = cb_transfer_finished
 
         self._logger.info('high level transceiver ready')
 
