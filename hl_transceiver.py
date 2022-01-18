@@ -26,8 +26,13 @@ class HLTransceiver():
     # base file name of the chunk files to use
     DOWNLOAD_CHUNK_BASE_NAME = 'chunk'
 
-    def __init__(self, ll_receiver: LLReceiver, download_path: str, cb_transfer_finished: Callable[[bool], None]) -> None:
+    def __init__(self, ll_receiver: LLReceiver, download_path: str, cb_transfer_finished: Callable[[pathlib.Path], None]) -> None:
         """Constructor.
+
+        Args:
+            ll_receiver (LLReceiver): Low level file transfer instance handling the chunk transfer
+            download_path (str): destination folder the received file should be stored
+            cb_transfer_finished (Callable[[pathlib.Path], None]): user callback executed if a file was received
         """
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -59,6 +64,8 @@ class HLTransceiver():
         self._logger.info('high level transceiver ready')
 
     def _resume_download(self) -> None:
+        """Internal function called during system startup to resume an ongoing download.
+        """
 
         # search for previous request
         if self._download_path.joinpath(self.DOWNLOAD_REQUEST_FILE).is_file():
@@ -96,12 +103,19 @@ class HLTransceiver():
             self._delete_chunks()
 
     def _delete_chunks(self) -> None:
+        """Internal function to delete all download artifacts after successful file download.
+        """
 
         # erase all chunks files
         for item in self._download_path.glob(f'{self.DOWNLOAD_CHUNK_BASE_NAME}*.bin'):
             item.unlink()
 
     def _reset(self, request: StartTransferRequest):
+        """Internal function to initiate a transfer depending on the request and internal condition.
+
+        Args:
+            request (StartTransferRequest): received transfer request
+        """
 
         # take over request
         self._request = request
@@ -189,6 +203,8 @@ class HLTransceiver():
         self._response.size += len(chunk)
 
     def _transfer_finished(self):
+        """Internal function called after a file transfer has been finished.
+        """
 
         # stop time
         self._timestamp = time.time() - self._timestamp
@@ -217,10 +233,14 @@ class HLTransceiver():
         # erase request file (which is the indicator of an running download )
         self._download_path.joinpath((self.DOWNLOAD_REQUEST_FILE)).unlink()
 
-        # call user callback with tranfer result
         if self._cb_transfer_finished:
-            self._cb_transfer_finished(
-                self._response.status == StartTransferResponseStatus.FINISHED)
+            # call user callback
+            if self._response.status == StartTransferResponseStatus.FINISHED:
+                # use received file in case of success
+                self._cb_transfer_finished(file_name)
+            else:
+                # file reception was not successful
+                self._cb_transfer_finished(None)
 
     @property
     def transfer_duration(self) -> float:
