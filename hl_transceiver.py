@@ -75,7 +75,17 @@ class HLTransceiver():
                         self.DOWNLOAD_REQUEST_FILE),
                     mode='r',
                     encoding='utf-8') as request_file:
-                self._request.from_json(request_file.read())
+                try:
+                    self._request.from_json(request_file.read())
+                except:
+                    self._logger.error(
+                        'invalid json file - can not resume download')
+                    # delete corrupt file
+                    self._download_path.joinpath(
+                        self.DOWNLOAD_REQUEST_FILE).unlink()
+                    # remove possible download artifacts
+                    self._delete_chunks()
+                    return
 
             # call reset to setup response accordingly
             self._reset(self._request)
