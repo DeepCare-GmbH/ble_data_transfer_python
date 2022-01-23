@@ -177,6 +177,18 @@ class HLTransceiver():
 
         self._logger.info('start transfer response requested')
         self._logger.debug(self._response)
+
+        # check if transfer was requested which means that the chunk counter must be unequal zero
+        if self._response.chunks == 0:
+            self._response.status = StartTransferResponseStatus.ERROR
+            self._logger.error(
+                'number of chunks is zero: file transfer initiated ?')
+
+        # check if more chunks were requested than available
+        elif self._response.next_chunk > self._response.chunks:
+            self._response.status = StartTransferResponseStatus.ERROR
+            self._logger.error('non-existant chunk requested')
+
         return self._response
 
     def add_chunk(self, chunk: List[bytes]) -> None:
