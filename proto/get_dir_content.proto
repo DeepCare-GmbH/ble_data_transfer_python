@@ -1,0 +1,15 @@
+syntax = "proto3";
+package deepcare.get_dir_content;
+
+import "google/protobuf/timestamp.proto";
+
+message SingleFile {
+    string name = 1;
+    uint32 size = 2;
+    google.protobuf.Timestamp time = 3;
+}
+
+message GetDirContent {
+    string path = 1;
+    repeated SingleFile files = 2;
+}

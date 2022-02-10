@@ -8,12 +8,8 @@ import betterproto
 
 class Target(betterproto.Enum):
     UNKNOWN = 0
-    DOCKER_IMAGE = 1
-    USER_BACKGROUND_IMAGE = 2
-    DATA = 3
-    BASH_SCRIPT = 4
-    ANSIBLE_SCRIPT = 5
-    PLAIN_FILE = 6
+    UPDATE = 1
+    DATA = 2
 
 
 class StartTransferRequestDirection(betterproto.Enum):

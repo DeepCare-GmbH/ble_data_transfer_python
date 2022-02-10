@@ -3,12 +3,8 @@ package deepcare.messages;
 
 enum Target {
   UNKNOWN = 0;
-  DOCKER_IMAGE = 1;
-  USER_BACKGROUND_IMAGE = 2;
-  DATA = 3;
-  BASH_SCRIPT = 4;
-  ANSIBLE_SCRIPT = 5;
-  PLAIN_FILE = 6;
+  UPDATE = 1;               // update path
+  DATA = 2;                 // data path
 }
 
 
