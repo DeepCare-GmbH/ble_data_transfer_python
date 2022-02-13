@@ -26,12 +26,12 @@ class HLTransceiver():
     # base file name of the chunk files to use
     DOWNLOAD_CHUNK_BASE_NAME = 'chunk'
 
-    def __init__(self, ll_receiver: LLReceiver, download_path: str, cb_transfer_finished: Callable[[pathlib.Path], None]) -> None:
+    def __init__(self, ll_receiver: LLReceiver, root_path: str, cb_transfer_finished: Callable[[pathlib.Path], None]) -> None:
         """Constructor.
 
         Args:
             ll_receiver (LLReceiver): Low level file transfer instance handling the chunk transfer
-            download_path (str): destination folder the received file should be stored
+            root_path (str): root folder for upload and download folder used for file transfer
             cb_transfer_finished (Callable[[pathlib.Path], None]): user callback executed if a file was received
         """
 
@@ -51,9 +51,11 @@ class HLTransceiver():
         # set callback if ll chunk was received
         self._ll_receiver.cb_new_data = self.add_chunk
 
-        # ensure download path folder exists
-        self._download_path = pathlib.Path(download_path).expanduser()
+        # ensure download and upload folders exists
+        self._download_path = pathlib.Path(root_path).joinpath('download')
         self._download_path.mkdir(parents=True, exist_ok=True)
+        self._upload_path = pathlib.Path(root_path).joinpath('upload')
+        self._upload_path.mkdir(parents=True, exist_ok=True)
 
         # check if a download was in progress and can be resumed
         self._resume_download()
