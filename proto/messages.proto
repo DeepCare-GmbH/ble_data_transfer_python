@@ -3,8 +3,12 @@ package deepcare.messages;
 
 enum Target {
   UNKNOWN = 0;
-  UPDATE = 1;               // update path
-  DATA = 2;                 // data path
+  DOCKER_IMAGE = 1;
+  USER_BACKGROUND_IMAGE = 2;
+  DATA = 3;
+  BASH_SCRIPT = 4;
+  ANSIBLE_SCRIPT = 5;
+  PLAIN_FILE = 6;
 }
 
 
@@ -12,8 +16,8 @@ enum Target {
 message StartTransferRequest {
 
   enum Direction {
-      MAIN = 0;             // Cellphone
-      SECOND = 1;           // PI
+      PHONE_TO_DEVICE = 0;
+      DEVICE_TO_PHONE = 1;
   }
 
   string filename = 1;      // name of file to transfer

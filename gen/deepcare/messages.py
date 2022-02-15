@@ -8,13 +8,17 @@ import betterproto
 
 class Target(betterproto.Enum):
     UNKNOWN = 0
-    UPDATE = 1
-    DATA = 2
+    DOCKER_IMAGE = 1
+    USER_BACKGROUND_IMAGE = 2
+    DATA = 3
+    BASH_SCRIPT = 4
+    ANSIBLE_SCRIPT = 5
+    PLAIN_FILE = 6
 
 
 class StartTransferRequestDirection(betterproto.Enum):
-    MAIN = 0
-    SECOND = 1
+    PHONE_TO_DEVICE = 0
+    DEVICE_TO_PHONE = 1
 
 
 class StartTransferResponseStatus(betterproto.Enum):
