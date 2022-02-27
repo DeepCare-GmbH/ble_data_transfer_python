@@ -49,6 +49,9 @@ class HLTransceiver():
         # set callback to consume downloaded chunks
         ll_receiver.cb_new_data = self._download.add_chunk
 
+        # create uploader instance
+        self._upload = HLUpload(root_path)
+
         self._logger.info('high level transceiver ready')
 
     def set_request(self, request: StartTransferRequest) -> None:
@@ -57,8 +60,12 @@ class HLTransceiver():
 
         if self._last_direction == StartTransferRequestDirection.PHONE_TO_DEVICE:
             self._download.set_request(request)
+        else:
+            self._upload.set_request(request)
 
     def get_response(self) -> StartTransferResponse:
 
         if self._last_direction == StartTransferRequestDirection.PHONE_TO_DEVICE:
             return self._download.get_response()
+        else:
+            return self._upload.get_response()

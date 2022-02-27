@@ -20,8 +20,10 @@ class LLSender():
         self._mtu = mtu
         # transfer data instance
         self._transfer_data = TransferData()
+        # payload data generator
+        self._payload: bytes = None
 
-    def send(self, data: List[bytes]):
+    def send(self, data: bytes):
 
         # determine payload size
         payload_size = self._mtu - self.PAYLOAD_HEADER_SIZE
@@ -94,9 +96,9 @@ if __name__ == '__main__':
 
     log.info('test transmitting')
 
-    sender.send(list(bytes(S1000, 'UTF-8')))
+    sender.send(bytes(S1000, 'UTF-8'))
 
-    expected_chunks = ceil(len(S1000) / (MTU - PAYLOAD_HEADER_SIZE))
+    expected_chunks = ceil(len(S1000) / (MTU - sender.PAYLOAD_HEADER_SIZE))
 
     received = bytes()
     count = 0
