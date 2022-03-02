@@ -50,7 +50,7 @@ class HLTransceiver():
         ll_receiver.cb_new_data = self._download.add_chunk
 
         # create uploader instance
-        self._upload = HLUpload(root_path)
+        self._upload = HLUpload(root_path, ll_sender, 1024 * 100)
 
         self._logger.info('high level transceiver ready')
 
