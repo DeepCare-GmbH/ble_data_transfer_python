@@ -56,8 +56,9 @@ class HLTransceiver():
 
     def set_request(self, request: StartTransferRequest) -> None:
 
-        self._last_direction = request.direction
+        self._logger.info(request)
 
+        self._last_direction = request.direction
         if self._last_direction == StartTransferRequestDirection.PHONE_TO_DEVICE:
             self._download.set_request(request)
         else:
@@ -66,6 +67,10 @@ class HLTransceiver():
     def get_response(self) -> StartTransferResponse:
 
         if self._last_direction == StartTransferRequestDirection.PHONE_TO_DEVICE:
-            return self._download.get_response()
+            response = self._download.get_response()
         else:
-            return self._upload.get_response()
+            response = self._upload.get_response()
+
+        self._logger.info(response)
+
+        return response
