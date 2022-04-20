@@ -13,7 +13,8 @@ from typing import Callable, List
 import coloredlogs
 
 from ble_data_transfer_python.gen.deepcare.messages import (
-    StartTransferRequest, StartTransferResponse, StartTransferResponseStatus)
+    StartTransferRequest, StartTransferResponse, StartTransferResponseStatus,
+    Target)
 from ble_data_transfer_python.ll_receiver import LLReceiver
 
 
@@ -241,10 +242,10 @@ class HLDownload:
         # call user callback
         if self._response.status == StartTransferResponseStatus.FINISHED:
             # use received file in case of success
-            self._cb_finished(file_name)
+            self._cb_finished(file_name, self._request.target)
         else:
             # file reception was not successful
-            self._cb_finished(None)
+            self._cb_finished(None, Target.UNKNOWN)
 
     @property
     def transfer_duration(self) -> float:
