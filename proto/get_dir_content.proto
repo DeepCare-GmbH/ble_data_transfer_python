@@ -12,4 +12,5 @@ message SingleFile {
 message GetDirContent {
     string path = 1;
     repeated SingleFile files = 2;
+    bool next_page = 3;
 }
