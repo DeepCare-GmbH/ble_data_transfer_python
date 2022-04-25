@@ -50,8 +50,14 @@ class HLUpload:
         # copy filename
         self._response.filename = request.filename
 
-        # check if requested file is available
+        # merge requested file with root folder
         upload_file = self._upload_path.joinpath(request.filename)
+        # check if still located in root folder after merging
+        if not str(upload_file).startswith(self._upload_path):
+            # root folder was changed - reject upload request
+            self._response.status = StartTransferResponseStatus.ERROR
+            return
+        # check if requested file is available
         if not upload_file.exists():
             self._response.status = StartTransferResponseStatus.FILE_NOT_FOUND
             return
