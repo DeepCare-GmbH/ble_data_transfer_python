@@ -19,3 +19,4 @@ class SingleFile(betterproto.Message):
 class GetDirContent(betterproto.Message):
     path: str = betterproto.string_field(1)
     files: List["SingleFile"] = betterproto.message_field(2)
+    next_page: bool = betterproto.bool_field(3)
